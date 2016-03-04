@@ -1,0 +1,248 @@
+//
+//  XGAlertView.m
+//  XGVaccine
+//
+//  Created by Aaron Yu on 15/6/9.
+//  Copyright (c) 2015年 Aaron. All rights reserved.
+//
+
+#import "XGAlertView.h"
+#import "UIImage+Color.h"
+
+#define kViewWidth CONTENT_PIXEL(308)
+#define kViewMaxHeight CONTENT_PIXEL(500)
+
+
+@interface XGAlertView ()
+
+@property(nonatomic, strong)UIControl *overlayView;
+
+@property(nonatomic, strong)UILabel *titleLabel;
+@property(nonatomic, strong)UILabel *messageLabel;
+
+@property(nonatomic, strong)NSArray *buttons;
+
+@end
+
+
+
+
+
+@implementation XGAlertView
+
+static XGAlertView *sharedView;
+
++ (XGAlertView *)sharedInstance
+{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedView = [[XGAlertView alloc]init];
+    });
+    
+    return sharedView;
+}
+
+
+- (void)setupWithMessage:(NSString *)message
+{
+    [[self subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
+    [[self.layer sublayers] makeObjectsPerformSelector:@selector(removeFromSuperlayer)];
+    
+    self.backgroundColor = [UIColor whiteColor];
+    self.layer.cornerRadius = 12;
+    self.layer.borderWidth = 4.0;
+    self.layer.borderColor = XG_BLUE_COLOR.CGColor;
+    self.layer.masksToBounds = YES;
+    
+    [self addSubview:self.messageLabel];
+    self.messageLabel.text = message;
+    [self.messageLabel sizeToFit];
+    
+    NSLog(@"%f",self.messageLabel.frame.size.height);
+    
+    self.frame = CGRectMake(0, 0, kViewWidth, CGRectGetHeight(self.messageLabel.frame) + 36);
+    
+    self.messageLabel.center = CGPointMake(kViewWidth / 2.0, CGRectGetHeight(self.frame) / 2.0);
+}
+
+- (void)setupWithMessage:(NSString *)message title:(NSString *)title buttons:(NSArray *)buttonTitles delegate:(id<XGAlertViewDelegate>) delegate
+{
+    [[self subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
+    [[self.layer sublayers] makeObjectsPerformSelector:@selector(removeFromSuperlayer)];
+    
+    self.userInteractionEnabled = YES;
+    
+    self.delegate = delegate;
+    
+    self.backgroundColor = [UIColor whiteColor];
+    self.layer.cornerRadius = CONTENT_PIXEL(12);
+    self.layer.borderWidth = CONTENT_PIXEL(4.0);
+    self.layer.borderColor = XG_BLUE_COLOR.CGColor;
+    self.layer.masksToBounds = YES;
+    
+    [self addSubview:self.titleLabel];
+    self.titleLabel.text = title;
+    
+    [self addSubview:self.messageLabel];
+    self.messageLabel.text = message;
+    
+    [self.messageLabel sizeToFit];
+    
+    self.frame = CGRectMake(0, 0, kViewWidth, CGRectGetHeight(self.messageLabel.frame) + CONTENT_PIXEL(36) + CONTENT_PIXEL(98));
+    
+    self.messageLabel.frame = CGRectMake(CONTENT_PIXEL(5), CONTENT_PIXEL(50), CONTENT_PIXEL(300), CGRectGetHeight(self.messageLabel.frame) + CONTENT_PIXEL(36));
+    
+    int count = [buttonTitles count];
+    
+    float sideWidth = 3.0;
+    
+    float width = (kViewWidth - CONTENT_PIXEL(8) - sideWidth * (count - 1)) / count;
+    
+    for (int index = 0; index < count; ++ index)
+    {
+        UIButton *button = [[UIButton alloc] initWithFrame:CGRectMake((width + sideWidth) * index + CONTENT_PIXEL(4), CGRectGetMaxY(self.messageLabel.frame), width, CONTENT_PIXEL(44))];
+        [button setBackgroundImage:[UIImage imageWithColor:XG_BLUE_COLOR] forState:UIControlStateNormal];
+        [button setBackgroundImage:[UIImage imageWithColor:XG_GRAY_COLOR] forState:UIControlStateHighlighted];
+        [button setTitle:[buttonTitles objectAtIndex:index] forState:UIControlStateNormal];
+        [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        [button setTitleColor:XG_BLUE_COLOR forState:UIControlStateHighlighted];
+        [button addTarget:self action:@selector(onButtonClick:) forControlEvents:UIControlEventTouchUpInside];
+        button.tag = index;
+        [self addSubview:button];
+    }
+    
+    CALayer *layer = [[CALayer alloc] init];
+    layer.frame = CGRectMake(CONTENT_PIXEL(4.0), CONTENT_PIXEL(4.0), CGRectGetWidth(self.frame) - CONTENT_PIXEL(8.0), CGRectGetHeight(self.frame) - CONTENT_PIXEL(8.0));
+    layer.borderWidth = CONTENT_PIXEL(4.0);
+    layer.borderColor = [UIColor whiteColor].CGColor;
+    layer.cornerRadius = CONTENT_PIXEL(12);
+    layer.masksToBounds = YES;
+    
+    [self.layer addSublayer:layer];
+}
+
+- (UIControl *)overlayView
+{
+    if (!_overlayView)
+    {
+        _overlayView = [[UIControl alloc] initWithFrame:CGRectMake(0, 0, CETC_SCREEN_WIDTH, CETC_SCREEN_HEIGHT)];
+        _overlayView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:.2];
+//        [_overlayView addTarget:self action:@selector(dismissView) forControlEvents:UIControlEventTouchDown];
+    }
+    return _overlayView;
+}
+
+- (UILabel *)messageLabel
+{
+    if (!_messageLabel)
+    {
+        _messageLabel = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, CONTENT_PIXEL(300), 100)];
+        _messageLabel.font = [UIFont systemFontOfSize:16.0];
+        _messageLabel.textAlignment = NSTextAlignmentCenter;
+        _messageLabel.textColor = XG_BLACK_TEXT_COLOR;
+        _messageLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _messageLabel.numberOfLines = 0;
+    }
+    return _messageLabel;
+}
+
+- (UILabel *)titleLabel
+{
+    if (!_titleLabel)
+    {
+        _titleLabel = [[UILabel alloc]initWithFrame:CGRectMake(CONTENT_PIXEL(5), 0, kViewWidth - CONTENT_PIXEL(10), CONTENT_PIXEL(50))];
+        _titleLabel.font = [UIFont systemFontOfSize:14.0];
+        _titleLabel.textAlignment = NSTextAlignmentCenter;
+        _titleLabel.textColor = XG_GRAY_TEXT_COLOR;
+        
+        UIView *lineView = [[UIView alloc] initWithFrame:CGRectMake(0, CGRectGetHeight(_titleLabel.frame) - 1, CGRectGetWidth(_titleLabel.frame), 1)];
+        lineView.backgroundColor = XG_BLUE_COLOR;
+        [_titleLabel addSubview:lineView];
+    }
+    return _titleLabel;
+}
+
+
+- (void)onButtonClick:(UIButton *)sender
+{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(alertView:didSelectButtonAtIndex:)])
+    {
+        [self.delegate alertView:self didSelectButtonAtIndex:sender.tag];
+    }
+    [self dismissView];
+}
+
+- (void)dismissView
+{
+    [UIView animateWithDuration:0.6
+                          delay:0
+                        options:UIViewAnimationCurveEaseIn | UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         self.alpha = 0.0;
+                         self.overlayView.alpha = 0.0;
+                     }
+                     completion:^(BOOL finished){
+                         [self removeFromSuperview];
+                         [self.overlayView removeFromSuperview];
+                     }];
+}
+
++ (void)showMessage:(NSString *)message
+{
+//    [[SVProgressHUD sharedView] performSelector:@selector(showProgressHUD:) withObject:message afterDelay:0.3];
+    [[XGAlertView sharedInstance] setupWithMessage:message];
+    
+    [XGAlertView showView:[XGAlertView sharedInstance] shouldDismiss:YES];
+}
+
++ (void)showMessage:(NSString *)message title:(NSString *)title buttons:(NSArray *)buttonTitles delegate:(id<XGAlertViewDelegate>) delegate
+{
+    [[XGAlertView sharedInstance] setupWithMessage:message title:title buttons:buttonTitles delegate:delegate];
+    
+    [XGAlertView showView:[XGAlertView sharedInstance] shouldDismiss:NO];
+}
+
++ (void)showMessage:(NSString *)message title:(NSString *)title buttons:(NSArray *)buttonTitles delegate:(id<XGAlertViewDelegate>) delegate tag:(NSInteger)tag
+{
+    [XGAlertView sharedInstance].tag = tag;
+
+    [XGAlertView showMessage:message title:title buttons:buttonTitles delegate:delegate];
+}
+
++ (void)showMessage:(NSString *)message title:(NSString *)title buttons:(NSArray *)buttonTitles
+{
+    [[XGAlertView sharedInstance] setupWithMessage:message title:title buttons:buttonTitles delegate:nil];
+    
+    [XGAlertView showView:[XGAlertView sharedInstance] shouldDismiss:NO];
+}
+
++ (void)showView:(XGAlertView *)view shouldDismiss:(BOOL)dismiss
+{
+    view.center = view.overlayView.center;
+    
+    view.alpha = 0.0;
+    view.overlayView.alpha = 0.0;
+    view.overlayView.userInteractionEnabled = !dismiss;
+    
+    [[UIApplication sharedApplication].keyWindow addSubview:view.overlayView];
+    [view.overlayView addSubview:view];
+    
+    [UIView animateWithDuration:0.3
+                          delay:0
+                        options:UIViewAnimationCurveEaseIn | UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         view.alpha = 1.0;
+                         view.overlayView.alpha = 1.0;
+                     }
+                     completion:^(BOOL finished){
+                     }];
+    
+    if (dismiss)
+    {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [view dismissView];
+        });
+    }
+}
+
+@end

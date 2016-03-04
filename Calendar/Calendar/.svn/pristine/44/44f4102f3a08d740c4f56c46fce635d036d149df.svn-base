@@ -1,0 +1,29 @@
+//
+//  XGScCalendarView.h
+//  XGVaccine
+//
+//  Created by Aaron Yu on 15/5/21.
+//  Copyright (c) 2015年 Aaron. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@protocol XGScCalendarDelegate <NSObject>
+
+-(void)tappedOnDate:(NSDate *)selectedDate;
+
+- (void)calendarHeightDidChangeTo:(CGFloat)height;
+
+- (void)didScrollToDate:(NSDate *)date;
+
+@end
+
+
+@interface XGScCalendarView : UIView
+
+@property(nonatomic, weak)id<XGScCalendarDelegate> delegate;
+@property(nonatomic, strong)UIScrollView *scView;
+
+- (void)setMarkedItems:(NSArray *)array;
+
+@end

@@ -1,0 +1,32 @@
+//
+//  XGAlertView.h
+//  XGVaccine
+//
+//  Created by Aaron Yu on 15/6/9.
+//  Copyright (c) 2015年 Aaron. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+
+@class XGAlertView;
+
+@protocol XGAlertViewDelegate <NSObject>
+
+- (void)alertView:(XGAlertView *)alertView didSelectButtonAtIndex:(NSInteger)index;
+
+@end
+
+@interface XGAlertView : UIView
+
+
+@property(nonatomic, weak)id<XGAlertViewDelegate> delegate;
+
++ (void)showMessage:(NSString *)message;
++ (void)showMessage:(NSString *)message title:(NSString *)title buttons:(NSArray *)buttonTitles delegate:(id<XGAlertViewDelegate>) delegate;
+
++ (void)showMessage:(NSString *)message title:(NSString *)title buttons:(NSArray *)buttonTitles delegate:(id<XGAlertViewDelegate>) delegate tag:(NSInteger)tag;
+
++ (void)showMessage:(NSString *)message title:(NSString *)title buttons:(NSArray *)buttonTitles;
+
+@end

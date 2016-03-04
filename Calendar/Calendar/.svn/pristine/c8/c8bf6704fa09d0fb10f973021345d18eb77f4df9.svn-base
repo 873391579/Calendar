@@ -1,0 +1,261 @@
+//
+//  XGScCalendarView.m
+//  XGVaccine
+//
+//  Created by Aaron Yu on 15/5/21.
+//  Copyright (c) 2015年 Aaron. All rights reserved.
+//
+
+#define KButtonHeight 40
+#define KLabelHeight  20
+
+
+#import "XGScCalendarView.h"
+#import "XGCalendarView.h"
+
+@interface XGScCalendarView()<UIScrollViewDelegate, XGCalendarDelegate>
+{
+    XGCalendarView *currentMonth;
+    XGCalendarView *frontMonth;
+    XGCalendarView *nextMonth;
+    
+    NSCalendar *gregorian;
+    UILabel *titleText;
+}
+@property (nonatomic,strong) UIButton *btnLeft;
+@property (nonatomic,strong) UIButton *btnRight;
+
+@end
+
+@implementation XGScCalendarView
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    {
+        self.backgroundColor = [UIColor whiteColor];
+        
+        [self addSubview:self.scView];
+        
+        [self addCalendarView];
+        
+        [self.scView scrollRectToVisible:CGRectMake(CGRectGetWidth(self.scView.frame), 0, CGRectGetWidth(self.scView.frame), 300) animated:NO];
+        
+        [self setUpTitleView];
+    }
+    return self;
+}
+- (void)addCalendarView
+{
+    currentMonth = [[XGCalendarView alloc] initWithFrame:CGRectMake(CGRectGetWidth(self.frame), 0, CGRectGetWidth(self.frame), 300)];
+    frontMonth   = [[XGCalendarView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(self.frame), 300)];
+    nextMonth    = [[XGCalendarView alloc] initWithFrame:CGRectMake(CGRectGetWidth(self.frame) * 2, 0, CGRectGetWidth(self.frame), 300)];
+    
+    currentMonth.delegate = self;
+    frontMonth.delegate = self;
+    nextMonth.delegate = self;
+
+    gregorian = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+    
+    currentMonth.calendarDate = [NSDate date];
+    
+    frontMonth.calendarDate = [self getFrontMonthDate];
+    nextMonth.calendarDate  = [self getNextMonthDate];
+    
+    [self.scView addSubview:currentMonth];
+    [self.scView addSubview:frontMonth];
+    [self.scView addSubview:nextMonth];
+}
+
+//-(id)hitTest:(CGPoint)point withEvent:(UIEvent *)event
+//{
+//    UIView *hitView = [super hitTest:point withEvent:event];
+//    return self;
+//}
+
+- (void)showFrontMonth
+{
+    self.btnLeft.userInteractionEnabled = NO;
+    self.btnRight.userInteractionEnabled = NO;
+    
+    [self.scView scrollRectToVisible:CGRectMake(0, 0, CGRectGetWidth(self.scView.frame), 300) animated:YES];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.36 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self setUpScrollView:self.scView];
+        self.btnLeft.userInteractionEnabled = YES;
+        self.btnRight.userInteractionEnabled = YES;
+    });
+}
+
+- (void)showNextMonth
+{
+    self.btnLeft.userInteractionEnabled = NO;
+    self.btnRight.userInteractionEnabled = NO;
+    [self.scView scrollRectToVisible:CGRectMake(CGRectGetWidth(self.scView.frame) * 2, 0, CGRectGetWidth(self.scView.frame), 300) animated:YES];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.36 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self setUpScrollView:self.scView];
+        self.btnLeft.userInteractionEnabled = YES;
+        self.btnRight.userInteractionEnabled = YES;
+    });
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
+{
+    [self setUpScrollView:scrollView];
+}
+
+- (void)setUpScrollView:(UIScrollView *)scrollView
+{
+    CGPoint offset = scrollView.contentOffset;
+    
+    int index = (int)(offset.x / CGRectGetWidth(scrollView.frame));
+    
+    NSLog(@"index:%d",index);
+    
+    if (0 == index)
+    {
+        currentMonth.calendarDate = [self getFrontMonthDate];
+        frontMonth.calendarDate   = [self getFrontMonthDate];
+        nextMonth.calendarDate    = [self getFrontMonthDate];
+        
+        [currentMonth reDraw];
+        [frontMonth reDraw];
+        [nextMonth reDraw];
+    }
+    else if (2 == index)
+    {
+        currentMonth.calendarDate = [self getNextMonthDate];
+        frontMonth.calendarDate   = [self getNextMonthDate];
+        nextMonth.calendarDate    = [self getNextMonthDate];
+        
+        [currentMonth reDraw];
+        [frontMonth reDraw];
+        [nextMonth reDraw];
+    }
+//    [scrollView scrollRectToVisible:CGRectMake(CGRectGetWidth(scrollView.frame), 0, CGRectGetWidth(scrollView.frame), 300) animated:NO];
+    [scrollView setContentOffset:CGPointMake(CGRectGetWidth(scrollView.frame), 0)];
+    [self selUpTitleText];
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(didScrollToDate:)])
+    {
+        [self.delegate performSelector:@selector(didScrollToDate:) withObject:currentMonth.calendarDate];
+    }
+}
+
+
+- (UIScrollView *)scView
+{
+    if (!_scView)
+    {
+        _scView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, KButtonHeight + KLabelHeight, CGRectGetWidth(self.frame), CGRectGetHeight(self.frame) - 60)];
+        _scView.scrollEnabled = YES;
+        _scView.delegate = self;
+        _scView.pagingEnabled = YES;
+        _scView.showsHorizontalScrollIndicator = NO;
+        [_scView setContentSize:CGSizeMake(CGRectGetWidth(_scView.frame) * 3, CGRectGetHeight(_scView.frame))];
+    }
+    return _scView;
+}
+
+- (void)selUpTitleText
+{
+    NSDateFormatter *format = [[NSDateFormatter alloc] init];
+    [format setDateFormat:@"yyyy年MM月"];
+    NSString *dateString = [[format stringFromDate:currentMonth.calendarDate] uppercaseString];
+    [titleText setText:dateString];
+}
+
+
+- (void)setUpTitleView
+{
+    titleText = [[UILabel alloc]initWithFrame:CGRectMake(0,0, self.bounds.size.width, KButtonHeight)];
+    titleText.backgroundColor = [UIColor whiteColor];
+    titleText.textAlignment = NSTextAlignmentCenter;
+    [titleText setFont:[UIFont fontWithName:@"Helvetica-Bold" size:15.0f]];
+    [titleText setTextColor:[UIColor grayColor]];
+    
+    [self selUpTitleText];
+    [self addSubview:titleText];
+    
+    self.btnLeft = [[UIButton alloc] initWithFrame:CGRectMake(22, 0, KButtonHeight, KButtonHeight)];
+    self.btnRight = [[UIButton alloc] initWithFrame:CGRectMake(CGRectGetWidth(self.frame) - KButtonHeight - 22, 0, KButtonHeight, KButtonHeight)];
+    
+    [self.btnLeft setImage:[UIImage imageNamed:@"brn_Arrow_l.png"] forState:UIControlStateNormal];
+    [self.btnRight setImage:[UIImage imageNamed:@"brn_Arrow_r.png"] forState:UIControlStateNormal];
+    [self.btnLeft setImageEdgeInsets:UIEdgeInsetsMake(6, 6, 6, 6)];
+    [self.btnRight setImageEdgeInsets:UIEdgeInsetsMake(6, 6, 6, 6)];
+
+//    self.btnLeft.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+//    self.btnRight.contentHorizontalAlignment = UIControlContentHorizontalAlignmentRight;
+    
+    [self.btnLeft addTarget:self action:@selector(showFrontMonth) forControlEvents:UIControlEventTouchUpInside];
+    [self.btnRight addTarget:self action:@selector(showNextMonth) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:self.btnLeft];
+    [self addSubview:self.btnRight];
+
+    NSArray *weekNames = @[@"日",@"一",@"二",@"三",@"四",@"五",@"六"];
+    NSInteger columns = 7;
+    CGFloat width = CETC_SCREEN_WIDTH / 7.0;
+    NSInteger originX = 0;
+    NSInteger originY = 40;
+    for (int i =0; i<weekNames.count; i++)
+    {
+        UILabel *weekNameLabel = [[UILabel alloc] init];
+        weekNameLabel.text = [weekNames objectAtIndex:i];
+        weekNameLabel.backgroundColor = [UIColor whiteColor];
+        [weekNameLabel setFrame:CGRectMake(originX+(width*(i%columns)), originY, width, KLabelHeight)];
+        [weekNameLabel setFont:[UIFont fontWithName:@"HelveticaNeue" size:17.0f]];
+        [weekNameLabel setTextColor:XG_GRAY_TEXT_COLOR];
+        weekNameLabel.userInteractionEnabled = NO;
+        [weekNameLabel setTextAlignment:NSTextAlignmentCenter];
+        [self addSubview:weekNameLabel];
+    }
+}
+
+- (NSDate *)getNextMonthDate
+{
+    NSDateComponents *components = [gregorian components:(NSEraCalendarUnit | NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit) fromDate:currentMonth.calendarDate];
+    components.day = 1;
+    components.month += 1;
+    return [gregorian dateFromComponents:components];
+}
+
+- (NSDate *)getFrontMonthDate
+{
+    NSDateComponents *components = [gregorian components:(NSEraCalendarUnit | NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit) fromDate:currentMonth.calendarDate];
+    components.day = 1;
+    components.month -= 1;
+    return [gregorian dateFromComponents:components];
+}
+
+- (void)calendarHeightDidChangeTo:(CGFloat)height
+{
+    CGRect selfFrame = self.frame;
+    self.frame = CGRectMake(selfFrame.origin.x, selfFrame.origin.y, CGRectGetWidth(selfFrame), height);
+    CGRect scFrame = self.scView.frame;
+    
+    [UIView animateWithDuration:.3 animations:^(void){
+        self.scView.frame = CGRectMake(scFrame.origin.x, scFrame.origin.y, CGRectGetWidth(selfFrame), height + KButtonHeight + KButtonHeight);
+    }];
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(calendarHeightDidChangeTo:)])
+    {
+        [self.delegate calendarHeightDidChangeTo:height + KButtonHeight + KButtonHeight];
+    }
+}
+
+-(void)tappedOnDate:(NSDate *)selectedDate
+{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(tappedOnDate:)])
+    {
+        [self.delegate tappedOnDate:selectedDate];
+    }
+}
+
+- (void)setMarkedItems:(NSArray *)array
+{
+    [currentMonth setMarkItems:array];
+    [currentMonth setNeedsDisplay];
+}
+
+
+@end
