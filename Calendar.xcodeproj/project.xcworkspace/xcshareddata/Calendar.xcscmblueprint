@@ -1,0 +1,32 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "C107C898D6678ECE82629EB95CF7D51C9249C8F5",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "d653135c-8b26-4f2c-b57a-287fa12c817e++125" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "d653135c-8b26-4f2c-b57a-287fa12c817e++125" : 0,
+    "C107C898D6678ECE82629EB95CF7D51C9249C8F5" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "20D8EDD6-1897-4B24-A32F-85D856F6D4B1",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "d653135c-8b26-4f2c-b57a-287fa12c817e++125" : "Calendar\/Calendar\/Calendar\/",
+    "C107C898D6678ECE82629EB95CF7D51C9249C8F5" : "Calendar\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "Calendar",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "Calendar.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/873391579\/Calendar.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "C107C898D6678ECE82629EB95CF7D51C9249C8F5"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "http:\/\/10.111.10.30:8080\/svn\/Develop",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "d653135c-8b26-4f2c-b57a-287fa12c817e++125"
+    }
+  ]
+}
